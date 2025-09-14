@@ -277,23 +277,45 @@ def request_motion(  # NOQA
     pre_contact_waypoint = None
     val = context['pre_contact_tile']
     if val != '':
-        pre_contact_tile = [
-            waypoint_grid_size[1] - int(val[1]),
-            ascii_lowercase.index(val[0]),
-        ]
-        pre_contact_waypoint = sample_waypoint_in_tile(
-            annotation_size, waypoint_grid_size, pre_contact_tile)
+        # Handle various formats: 'b2', 'b[2]', '[b2]', etc.
+        val_clean = val.strip()
+        if val_clean.startswith('[') and val_clean.endswith(']'):
+            val_clean = val_clean[1:-1]  # Remove brackets
+        elif '[' in val_clean and ']' in val_clean:
+            # Handle 'b[2]' format
+            val_clean = val_clean.replace('[', '').replace(']', '')
+        
+        if len(val_clean) >= 2 and val_clean[0].isalpha() and val_clean[1:].isdigit():
+            pre_contact_tile = [
+                waypoint_grid_size[1] - int(val_clean[1:]),
+                ascii_lowercase.index(val_clean[0]),
+            ]
+            pre_contact_waypoint = sample_waypoint_in_tile(
+                annotation_size, waypoint_grid_size, pre_contact_tile)
+        else:
+            print(f"Warning: Invalid pre_contact_tile format: '{val}' -> '{val_clean}'")
 
     post_contact_tile = None
     post_contact_waypoint = None
     val = context['post_contact_tile']
     if val != '':
-        post_contact_tile = [
-            waypoint_grid_size[1] - int(val[1]),
-            ascii_lowercase.index(val[0]),
-        ]
-        post_contact_waypoint = sample_waypoint_in_tile(
-            annotation_size, waypoint_grid_size, post_contact_tile)
+        # Handle various formats: 'b2', 'b[2]', '[b2]', etc.
+        val_clean = val.strip()
+        if val_clean.startswith('[') and val_clean.endswith(']'):
+            val_clean = val_clean[1:-1]  # Remove brackets
+        elif '[' in val_clean and ']' in val_clean:
+            # Handle 'b[2]' format
+            val_clean = val_clean.replace('[', '').replace(']', '')
+        
+        if len(val_clean) >= 2 and val_clean[0].isalpha() and val_clean[1:].isdigit():
+            post_contact_tile = [
+                waypoint_grid_size[1] - int(val_clean[1:]),
+                ascii_lowercase.index(val_clean[0]),
+            ]
+            post_contact_waypoint = sample_waypoint_in_tile(
+                annotation_size, waypoint_grid_size, post_contact_tile)
+        else:
+            print(f"Warning: Invalid post_contact_tile format: '{val}' -> '{val_clean}'")
 
     pre_contact_height = context['pre_contact_height']
     post_contact_height = context['post_contact_height']
@@ -522,9 +544,28 @@ def annotate_visual_prompts(
 
 
 def plot_smooth_curve(ax, points):
-    points = np.array(points)
-    inds = np.argsort(points[:, 0])  # [::-1]
-    points = points[inds]
+    if not points:
+        return
+    
+    # Convert all points to 2D format
+    points_2d = []
+    for point in points:
+        point = np.array(point)
+        if point.ndim == 1:
+            points_2d.append(point)
+        else:
+            points_2d.append(point[0])  # Take first row if 2D
+    
+    points = np.array(points_2d)
+    
+    # Handle empty case
+    if points.size == 0:
+        return
+    
+    # Sort by x-coordinate if multiple points
+    if len(points) > 1:
+        inds = np.argsort(points[:, 0])  # [::-1]
+        points = points[inds]
 
     xs = []
     ys = []

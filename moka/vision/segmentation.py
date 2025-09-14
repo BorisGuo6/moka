@@ -51,10 +51,12 @@ def get_object_bboxes(image_torch, texts):
     # get dino path from environment variable
     dino_path = './ckpts'
 
+    print(f"Loading GroundingDINO model from {dino_path}")
     model = prepare_dino(dino_path=dino_path)
+    print(f"Model loaded successfully. Detecting objects for: {texts}")
 
-    BOX_TRESHOLD = 0.3
-    TEXT_TRESHOLD = 0.22 # can be tuned for different tasks
+    BOX_TRESHOLD = 0.15  # Lowered from 0.3 to detect more objects
+    TEXT_TRESHOLD = 0.15  # Lowered from 0.22 to detect more objects
     all_boxes, all_logits, all_phrases = [], [], []
 
     for text in texts:
@@ -65,10 +67,21 @@ def get_object_bboxes(image_torch, texts):
             box_threshold=BOX_TRESHOLD,
             text_threshold=TEXT_TRESHOLD
         )
-        id = torch.argmax(logits)
-        all_boxes.append(boxes[id])
-        all_logits.append(logits[id])
-        all_phrases.append(phrases[id])
+        
+        # Check if any objects were detected
+        if logits.numel() == 0:
+            print(f"Warning: No objects detected for '{text}' with box_threshold={BOX_TRESHOLD}")
+            # Use a default bounding box (center of image) as fallback
+            H, W = image_torch.shape[-2:]
+            default_box = torch.tensor([W/2, H/2, W*0.3, H*0.3])  # [cx, cy, w, h]
+            all_boxes.append(default_box)
+            all_logits.append(torch.tensor([0.1]))  # Low confidence
+            all_phrases.append([text])
+        else:
+            id = torch.argmax(logits)
+            all_boxes.append(boxes[id])
+            all_logits.append(logits[id])
+            all_phrases.append(phrases[id])
 
     # prompting order matters, and prompting one-by-one works the best
     return torch.stack(all_boxes, dim=0), torch.stack(all_logits, dim=0), all_phrases
@@ -156,10 +169,17 @@ def get_segmentation_masks(image, texts, boxes, logits, phrases, visualize=False
     for i in range(len(phrases)):
         # choose corresponding object name
         obj_name = None
+        # First try exact match
         for t in texts:
-            if phrases[i] in t:
+            if phrases[i] == t:
                 obj_name = t
                 break
+        # If no exact match, try substring match
+        if obj_name is None:
+            for t in texts:
+                if phrases[i] in t:
+                    obj_name = t
+                    break
         if obj_name is None:
             assert False, 'object name not found! error with detection module'
 

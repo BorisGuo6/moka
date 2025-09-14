@@ -176,7 +176,7 @@ wandb
 checkpoints
 log
 render
-*.png
+# *.png
 
 *.sif
 
