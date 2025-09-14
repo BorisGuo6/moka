@@ -193,13 +193,49 @@ def request_motion(  # NOQA
         if use_center:
             idx = 0
         else:
-            idx = int(val[1:]) - 1
+            # Handle "Q[1]", "Q3", "P[1]", "P6", "[1]", and "1" formats
+            if val.startswith('Q[') and val.endswith(']'):
+                idx = int(val[2:-1]) - 1
+            elif val.startswith('Q') and val[1:].isdigit():
+                idx = int(val[1:]) - 1
+            elif val.startswith('P[') and val.endswith(']'):
+                idx = int(val[2:-1]) - 1
+            elif val.startswith('P') and val[1:].isdigit():
+                idx = int(val[1:]) - 1
+            elif val.startswith('[') and val.endswith(']'):
+                idx = int(val[1:-1]) - 1
+            else:
+                idx = int(val) - 1
+            
+            # Boundary check
+            max_idx = len(candidate_keypoints['grasped']) - 1
+            if idx < 0 or idx > max_idx:
+                print(f"Warning: grasp_keypoint index {idx} out of bounds [0, {max_idx}], using index 0")
+                idx = 0
         grasp_keypoint = candidate_keypoints['grasped'][idx]
 
     function_keypoint = None
     val = context['function_keypoint']
     if val != '':
-        idx = int(val[1:]) - 1
+        # Handle "Q[1]", "Q3", "P[1]", "P6", "[1]", and "1" formats
+        if val.startswith('Q[') and val.endswith(']'):
+            idx = int(val[2:-1]) - 1
+        elif val.startswith('Q') and val[1:].isdigit():
+            idx = int(val[1:]) - 1
+        elif val.startswith('P[') and val.endswith(']'):
+            idx = int(val[2:-1]) - 1
+        elif val.startswith('P') and val[1:].isdigit():
+            idx = int(val[1:]) - 1
+        elif val.startswith('[') and val.endswith(']'):
+            idx = int(val[1:-1]) - 1
+        else:
+            idx = int(val) - 1
+        
+        # Boundary check
+        max_idx = len(candidate_keypoints['grasped']) - 1
+        if idx < 0 or idx > max_idx:
+            print(f"Warning: function_keypoint index {idx} out of bounds [0, {max_idx}], using index 0")
+            idx = 0
         function_keypoint = candidate_keypoints['grasped'][idx]
 
     target_keypoint = None
@@ -208,7 +244,25 @@ def request_motion(  # NOQA
         if use_center:
             idx = 0
         else:
-            idx = int(val[1:]) - 1
+            # Handle "Q[1]", "Q3", "P[1]", "P6", "[1]", and "1" formats
+            if val.startswith('Q[') and val.endswith(']'):
+                idx = int(val[2:-1]) - 1
+            elif val.startswith('Q') and val[1:].isdigit():
+                idx = int(val[1:]) - 1
+            elif val.startswith('P[') and val.endswith(']'):
+                idx = int(val[2:-1]) - 1
+            elif val.startswith('P') and val[1:].isdigit():
+                idx = int(val[1:]) - 1
+            elif val.startswith('[') and val.endswith(']'):
+                idx = int(val[1:-1]) - 1
+            else:
+                idx = int(val) - 1
+            
+            # Boundary check
+            max_idx = len(candidate_keypoints['unattached']) - 1
+            if idx < 0 or idx > max_idx:
+                print(f"Warning: target_keypoint index {idx} out of bounds [0, {max_idx}], using index 0")
+                idx = 0
         target_keypoint = candidate_keypoints['unattached'][idx]
     else:
         # A patch for the missing target keypoint issue during pick-and-place.

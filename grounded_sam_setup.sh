@@ -138,7 +138,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     
     # 添加新配置
     echo "" >> ~/.bashrc
-    echo "# Grounded-SAM Environment Variables (Auto-detected)" >> ~/.bashrc
+    echo "# Grounded-SAM Environment Variables" >> ~/.bashrc
     echo "export AM_I_DOCKER=False" >> ~/.bashrc
     echo "export BUILD_WITH_CUDA=True" >> ~/.bashrc
     echo "export CUDA_HOME=$CUDA_HOME" >> ~/.bashrc
